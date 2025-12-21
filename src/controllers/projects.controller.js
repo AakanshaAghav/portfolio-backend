@@ -8,16 +8,16 @@ exports.createProject = async (req, res) => {
     tech_stack,
     github_url,
     live_url,
-    image_url
+    media_id
   } = req.body;
 
   try {
     const result = await pool.query(
       `INSERT INTO projects 
-      (title, description, tech_stack, github_url, live_url, image_url)
+      (title, description, tech_stack, github_url, live_url, media_id)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
-      [title, description, tech_stack, github_url, live_url, image_url]
+      [title, description, tech_stack, github_url, live_url, media_id]
     );
 
     res.status(201).json(result.rows[0]);
@@ -29,14 +29,24 @@ exports.createProject = async (req, res) => {
 // GET all projects (public)
 exports.getProjects = async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM projects ORDER BY created_at DESC"
-    );
+    const result = await pool.query(`
+      SELECT 
+        projects.*,
+        json_build_object(
+          'id', media.id,
+          'file_url', media.file_url
+        ) AS media
+      FROM projects
+      LEFT JOIN media ON projects.media_id = media.id
+      ORDER BY projects.created_at DESC
+    `);
+
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // UPDATE project
 exports.updateProject = async (req, res) => {
@@ -47,7 +57,7 @@ exports.updateProject = async (req, res) => {
     tech_stack,
     github_url,
     live_url,
-    image_url
+    media_id
   } = req.body;
 
   try {
@@ -58,10 +68,10 @@ exports.updateProject = async (req, res) => {
         tech_stack=$3,
         github_url=$4,
         live_url=$5,
-        image_url=$6
+        media_id=$6
       WHERE id=$7
       RETURNING *`,
-      [title, description, tech_stack, github_url, live_url, image_url, id]
+      [title, description, tech_stack, github_url, live_url, media_id, id]
     );
 
     if (result.rows.length === 0) {
