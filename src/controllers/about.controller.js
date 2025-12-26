@@ -1,6 +1,5 @@
 const pool = require("../config/db");
-const fs = require("fs");
-const path = require("path");
+const supabase = require("../config/supabase");
 
 // GET about (public)
 exports.getAbout = async (req, res) => {
@@ -21,19 +20,27 @@ exports.updateAbout = async (req, res) => {
   let image_url = null;
 
   try {
-    if(req.file) {
-      const uploadDir = "uploads/about";
-      if(!fs.existsSync(uploadDir)){
-        fs.mkdirSync(uploadDir, {recursive: true});
+    if (req.file) {
+      const file = req.file;
+
+      const fileName = `about/${Date.now()}-${file.originalname}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("about-images") 
+        .upload(fileName, file.buffer, {
+          contentType: file.mimetype,
+        });
+
+      if (uploadError) {
+        return res.status(400).json({ error: uploadError.message });
       }
 
-      const fileName = Date.now() + "-" + req.file.originalname;
-      
-      const filePath = path.join(uploadDir, fileName);
+      // 🔗 Get public URL
+      const { data } = supabase.storage
+        .from("about-images") 
+        .getPublicUrl(fileName);
 
-      fs.writeFileSync(filePath, req.file.buffer);
-
-      image_url = `${req.protocol}://${req.get("host")}/${filePath}`;
+      image_url = data.publicUrl;
     }
 
     const result = await pool.query(
