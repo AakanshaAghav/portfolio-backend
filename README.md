@@ -7,12 +7,6 @@ The backend is built with **Node.js**, **Express**, **Supabase (PostgreSQL)**, a
 
 ---
 
-## 🔗 Live Backend URL
-
-https://portfolio-backend-i448.onrender.com
-
----
-
 ## 🛠 Tech Stack
 
 - **Runtime:** Node.js  
